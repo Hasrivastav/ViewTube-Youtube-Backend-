@@ -11,5 +11,8 @@
     "chai"
   ],
   "author": "Harsh",
-  "license": "ISC"
+  "license": "ISC",
+  "devDependencies": {
+    "nodemon": "^3.0.2"
+  }
 }

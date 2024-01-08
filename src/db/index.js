@@ -14,6 +14,3 @@ const connectDB = async()=>{
 }
 
 export default connectDB
-// our application is running on  a new process and the "procces" here is a refrence to that
-
-//ASSIGNMENT _console log the connectionInstace it can be knowledgable

@@ -7,7 +7,7 @@ const videoSchema = new Schema(
     type:String,
     required:true
  },
- thumbail:{
+ thumbnail:{
     type:String,
     required:true
  },title:{

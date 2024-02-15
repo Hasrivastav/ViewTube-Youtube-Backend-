@@ -9,19 +9,25 @@ cloudinary.config({
 
 const uploadOnCloudinary = async (localPath)=>{
     try {
-        if(!localPath) return null
+        if (!localPath) {
+            return "pError:File path is not provided at uploadOnCloudinary FUNCTION -file- services/cloudinary.js";
+          }
         //upload on cloudinary
-         const response = await   cloudinary.uploader.upload(localPath,{
+         const response = await  cloudinary.uploader.upload(localPath,{
             resource_type:"auto"
         })
         //file has been uploaded
         // console.log("file is uploaded on cloudinary")
         //remove the local file after it has been uploaded to cloudinary
+        console.log(
+            "CloudUploadSuccess: File uploading at Clodinary is successfull through uploadOnCloudinary FUNCTION -file- services/cloudinary.js"
+          );
+
         fs.unlinkSync(localPath)
         return response;
 
     } catch (error) {
-        fs.unlinkSync(localPath)//remove the locaaly saved temporarily file as the upload operation got failed
+        // fs.unlinkSync(localPath)//remove the locaaly saved temporarily file as the upload operation got failed
         return null;
     }
 }

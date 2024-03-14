@@ -1,5 +1,7 @@
 import mongoose, { isValidObjectId } from "mongoose";
 import { Video } from "../models/video.model.js";
+import { Comment } from "../models/comment.model.js";
+import { Like } from "../models/like.model.js";
 import { User } from "../models/user.model.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
@@ -39,8 +41,11 @@ const getAllVideos = asyncHandler(async (req, res) => {
       owner: new mongoose.Types.ObjectId(userId),
     }
    })
+  //  console.log(userId)
+
+   pipelineArray.push({ $match: { isPublished: true } });
   
-   if (sortType && sortBy) {
+   if ( sortBy && sortType) {
     pipelineArray.push(
       sortType === "asc"
         ? {
@@ -56,7 +61,18 @@ const getAllVideos = asyncHandler(async (req, res) => {
     );
   }
 
-  const videosAggregate = await Video.aggregate(pipelineArray);
+
+  const options = {
+    page: Number(page,1),
+    limit: Number(limit,10),
+  };
+
+  const videosAggregate = await Video.aggregatePaginate(
+    Video.aggregate(pipelineArray),
+    options
+  ); 
+
+  // console.log(videosAggregate)
 
   if (videosAggregate.length === 0) {
     throw new ApiError(
@@ -65,21 +81,12 @@ const getAllVideos = asyncHandler(async (req, res) => {
     );
   }
 
-  const options = {
-    page: Number(page),
-    limit: Number(limit),
-  };
-
-  const videosArray = await Video.aggregatePaginate(videosAggregate, options);
-
-
-
   return res
   .status(200)
   .json(
     new ApiResponse(
       200,
-      videosArray,
+      videosAggregate,
       `Videos for page: ${page} and limit: ${limit} have been fetched successfully`
     )
   );
@@ -96,9 +103,11 @@ const publishAVideo = asyncHandler(async (req, res) => {
   if ([title, discription].some((field) => field.trim() === "")) {
     throw new ApiError(404, "Please provide a valid title or discription");
   }
+  console.log(req.user)
 
-  const vedioLocalPath = req.files?.videoFile[0].path;
-  const thumbailLocalPath = req.files?.thumbnail[0].path;
+  const vedioLocalPath = await req.files?.videoFile[0].path;
+  console.log(vedioLocalPath)
+  const thumbailLocalPath = await  req.files?.thumbnail[0].path;
 
   if (!vedioLocalPath && !thumbailLocalPath) {
     throw new ApiError(404, "please provide Vedio and thumbnail");
@@ -106,6 +115,9 @@ const publishAVideo = asyncHandler(async (req, res) => {
 
   const uploadedVideoFile = await uploadOnCloudinary(vedioLocalPath);
   const uploadedThumbnail = await uploadOnCloudinary(thumbailLocalPath);
+
+  // console.log(uploadedVideoFile.url)
+  // console.log(uploadedThumbnail.url)
 
   if (!uploadedVideoFile && !uploadedThumbnail) {
     throw new ApiError(
@@ -206,14 +218,14 @@ const getVideoById = asyncHandler(async (req, res) => {
     {
       $lookup: {
         from: "likes",
-        let: { videioId: "$_id" },
+        let: { videoId: "$_id" },
         as: "likes",
         pipeline: [
           {
             $match: {
               $expr: {
                 $and: [
-                  { $eq: ["video", "$videoid"] },
+                  { $eq: ["video", "$videoId"] },
                   {
                     $or: [
                       { $eq: [{ $type: "$comment" }, "missing"] },
@@ -261,7 +273,7 @@ const getVideoById = asyncHandler(async (req, res) => {
   }
 
   await Video.findByIdAndUpdate(
-    video?._id,
+    videoId,
     {
       $inc: {
         views: 1,
@@ -283,7 +295,7 @@ const getVideoById = asyncHandler(async (req, res) => {
 
 const updateVideo = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
-  const oldVideo = await Video.findById(videoId);
+  const video = await Video.findById(videoId);
 
   //TODO: update video details like title, description, thumbnail
   if (!(videoId && isValidObjectId(videoId))) {
@@ -293,7 +305,7 @@ const updateVideo = asyncHandler(async (req, res) => {
     );
   }
 
-  if (!oldVideo?.owner.equals(req.user._id)) {
+  if (!video?.owner.equals(req.user._id)) {
     throw new ApiError(
       400,
       "unauthorizedRequest: Only the owner of the video is allowed to update it: Error at updateVideo controller"
@@ -304,16 +316,17 @@ const updateVideo = asyncHandler(async (req, res) => {
   if (!(title && discription)) {
     throw new ApiError(400, "Title and Description are required");
   }
+  const thumbnailToDelete = video.thumbnail.public_id
+  const thumbnailToUpdate = req.files?.path;
 
-  const thumbailLocalPath = req.files?.path;
   if (!thumbailLocalPath) {
     throw new ApiError(
       400,
       "Error while fetching thumbnail localPath at updateVideo contoller"
     );
   }
-
-  const uploadThumbnail = await uploadOnCloudinary(thumbailLocalPath);
+  
+  const thumbnail = await uploadOnCloudinary(thumbnailToUpdate);
 
   if (!uploadThumbnail) {
     throw new ApiError(
@@ -342,7 +355,7 @@ const updateVideo = asyncHandler(async (req, res) => {
   }
 
   if (updatedVideo) {
-    await deleteOnCloudinary(oldVideo.thumbnail.publicId);
+    await deleteFromCloudinary(oldVideo.thumbnail.publicId);
   }
 
   return res
@@ -358,6 +371,7 @@ const deleteVideo = asyncHandler(async (req, res) => {
   }
 
   const vedio = await Video.findById(videoId);
+  console.log(vedio)
   if(!vedio) {
     throw new ApiError(404 ,"Vedio not found")
   }
@@ -366,14 +380,17 @@ const deleteVideo = asyncHandler(async (req, res) => {
  throw new ApiError(400 , "Not authorized for the Deletion")
   }
 
-  const deltedVideoFileResponse = await deleteFromCloudinary(vedio?.videoFile?.public_id);
-  const deltedThumbnailResponse = await deleteFromCloudinary(vedio?.thumbnail?.public_id);
+  console.log(vedio?.videoFile.publicId)
+  const deltedVideoFileResponse = await deleteFromCloudinary(vedio?.videoFile?.publicId);
+  const deltedThumbnailResponse = await deleteFromCloudinary(vedio?.thumbnail?.publicId,"video");
 
-  if(!(deltedVideoFileResponse==="ok" && deltedThumbnailResponse==="ok")){
-    throw new ApiError(400 , "Vedio or Thumbnail could not be delted from the server:Error at delteVedio controller");
-  }
+  // console.log(deltedThumbnailResponse)
 
-  const deltedVideo = await Video.findByIdAndDelete(videoId);
+  // if(!(deltedVideoFileResponse==="ok" && deltedThumbnailResponse==="ok")){
+  //   throw new ApiError(400 , "Vedio or Thumbnail could not be delted from the server:Error at delteVedio controller");
+  // }
+
+  const deletedVideo = await Video.findByIdAndDelete(videoId);
   const deletedComments = await Comment.deleteMany({ video: videoId });
   const deletedLikes = await Like.deleteMany({
     $and: [{ video: videoId }, { tweet: { $exists: false } }],

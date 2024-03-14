@@ -36,7 +36,7 @@ userRouter.route("/login").post(loginUser);
 userRouter.route("/logout").post(verifyJWT, logoutUser);
 userRouter.route("/refreshToken").post(refreshAccessToken);
 userRouter.route("/change-password").post(verifyJWT, changeCurrentPassword);
-userRouter.route("/current-user").post(verifyJWT, getCurrentUser);
+userRouter.route("/currentUser").post(verifyJWT, getCurrentUser);
 userRouter.route("/update-account").post(verifyJWT, updateAccountDetails);
 userRouter
   .route("/avatar")

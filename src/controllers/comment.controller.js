@@ -15,8 +15,13 @@ const getVideoComments = asyncHandler(async (req, res) => {
       "Invalid Object videoId :error at getVideocommnets"
     );
   }
+  const options = {
+    page: parseInt(page, 1),
+    limit: parseInt(limit, 10),
+ };
 
-  const commentsAggregated = await Comment.aggregate([
+  const commentsAggregated = await Comment.aggregatePaginate( 
+    Comment.aggregate([
     {
       $match: {
         video: new mongoose.Types.ObjectId(videoId),
@@ -49,7 +54,7 @@ const getVideoComments = asyncHandler(async (req, res) => {
            },
            isLiked: {
               $cond: {
-                 $if: {
+                 if: {
                     $in: [req.user?._id, "$likes.likedBy"],
                  },
                  then: true,
@@ -70,26 +75,25 @@ const getVideoComments = asyncHandler(async (req, res) => {
          isLiked: 1,
       },
    },
-  ]);
+  ]) ,options);
 
-  const options = {
-    page: parseInt(page, 1),
-    limit: parseInt(limit, 10),
- };
- const comments = await Comment.aggregatePaginate(
-  commentsAggregated,
-  options
-);
+  console.log(commentsAggregated)
 
-  if (!comments) {
+ 
+//  const comments = await Comment.aggregatePaginate(
+//   commentsAggregated,
+//   options
+// );
+
+  if (!commentsAggregated) {
     throw new ApiError(
       "No comments found for the requested videio:error at getVideoComments"
     );
   }
 
-  return response
+  return res
     .status(200)
-    .json(new ApiError(200, comments, "Comments fetched Successflly"));
+    .json(new ApiResponse(200, commentsAggregated, "Comments fetched Successflly"));
 });
 
 const addComment = asyncHandler(async (req, res) => {
@@ -132,7 +136,7 @@ const updateComment = asyncHandler(async (req, res) => {
   // TODO: update a comment
   const { commentId } = req.params;
   const userId = req.user?._id;
-  const commentBody = req.body;
+  const {commentBody} = req.body;
   const oldComment = await Comment.findById(commentId);
 
   if (!oldComment.owner.equals(userId)) {
@@ -145,7 +149,7 @@ const updateComment = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Error while updating comment:Add a valid comment");
   }
 
-  const newComment = Comment.findByIdAndUpdate(commentId, {
+  const newComment = await Comment.findByIdAndUpdate(commentId, {
     $set: {
       content: commentBody,
     },
@@ -155,7 +159,7 @@ const updateComment = asyncHandler(async (req, res) => {
 
   
   if (!newComment) {
-    throw new ApiErrors(500, "Failed to update the comment");
+    throw new ApiError(500, "Failed to update the comment");
  }
   
   return res.status(200).json(

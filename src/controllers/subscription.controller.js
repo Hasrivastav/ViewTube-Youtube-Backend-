@@ -37,7 +37,7 @@ const toggleSubscription = asyncHandler(async (req, res) => {
       await Subscription.deleteMany({
         channel: channelId,
         subscriber: subscriberId,
-      }).exec();
+      });
     }
   
     return res
@@ -60,8 +60,8 @@ const getUserChannelSubscribers = asyncHandler(async (req, res) => {
     console.log(channelId);
   
     if (!(channelId && isValidObjectId(channelId))) {
-      throw new ApiError(
-        `InvalidObjecId: ${channelId} is not a valid ownerId: Error at getUserChannelSubscribers controller`
+      throw new ApiError(400 ,
+        `InvalidObjecId:  not a valid ownerId: Error at getUserChannelSubscribers controller`
       );
     }
   
@@ -121,14 +121,14 @@ const getUserChannelSubscribers = asyncHandler(async (req, res) => {
 
 // controller to return channel list to which user has subscribed
 const getSubscribedChannels = asyncHandler(async (req, res) => {
-    const { subscriberId } = req.params;
-    const userId = req?.user?.id;
+    // const { subscriberId } = req.params;
+    const userId = req?.user?._id;
   
-    if (!(subscriberId && isValidObjectId(subscriberId))) {
-      throw new ApiError(
-        `InvalidObjecId: ${subscriberId} is not a valid ownerId: Error at getSubscribedChannels controller`
-      );
-    }
+    // if (!(subscriberId && isValidObjectId(subscriberId))) {
+    //   throw new ApiError(
+    //     `InvalidObjecId: ${subscriberId} is not a valid ownerId: Error at getSubscribedChannels controller`
+    //   );
+    // }
   
     if (!(userId && isValidObjectId(userId))) {
       throw new ApiError(
@@ -136,17 +136,17 @@ const getSubscribedChannels = asyncHandler(async (req, res) => {
       );
     }
   
-    if (!(subscriberId === userId)) {
-      throw new ApiError(
-        400,
-        "UnauthorizedAccess: SubscriberId does not matches with the userId: Error at getSubscribedChannels controller"
-      );
-    }
+    // if (!(subscriberId === userId)) {
+    //   throw new ApiError(
+    //     400,
+    //     "UnauthorizedAccess: SubscriberId does not matches with the userId: Error at getSubscribedChannels controller"
+    //   );
+    // }
   
     const aggregationResponse = await Subscription.aggregate([
       {
         $match: {
-          channel: new mongoose.Types.ObjectId(subscriberId),
+          channel: new mongoose.Types.ObjectId(req?.user?._id),
         },
       },
       {
@@ -190,7 +190,7 @@ const getSubscribedChannels = asyncHandler(async (req, res) => {
         new ApiResponse(
           200,
           subscribedChannelsArray,
-          `User with id: ${subscriberId} has subscried to ${subscribedChannelsArray.length} channels`
+          `User with id: ${userId} has subscried to ${subscribedChannelsArray.length} channels`
         )
       );
   });

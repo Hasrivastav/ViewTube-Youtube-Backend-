@@ -50,6 +50,9 @@ app.use("/api/v1/subscription", subscriptionRouter)
 import dashBoardRouter from './routes/dashboard.routes.js'
 app.use("/api/v1/dash", dashBoardRouter)
 
+import healthcheckRouter from './routes/./healthcheck.routes.js'
+app.use("/api/v1/health", healthcheckRouter)
+
 export {app}
 
 // Middlewares execute between the incoming request and the corresponding route handler, allowing you to perform operations like logging, authentication, data validation, request parsing, and more. This helps preprocess incoming data before it reaches the route handler

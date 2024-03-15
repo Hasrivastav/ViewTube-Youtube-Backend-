@@ -127,7 +127,7 @@ const getChannelVideos = asyncHandler(async (req, res) => {
          },
       },
    ]);
-   console.log(channelVideos)
+//    console.log(channelVideos)
 
    if (!channelVideos) {
       throw new ApiError(500, "Failed To fetch Channel Videos");

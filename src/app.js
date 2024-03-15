@@ -40,6 +40,10 @@ app.use("/api/v1/tweets", tweetRouter)
 import likeRouter from './routes/like.routes.js'
 app.use("/api/v1/likes", likeRouter)
 
+import playlistRouter from './routes/playlist.routes.js'
+app.use("/api/v1/playlist", playlistRouter)
+
+
 
 export {app}
 

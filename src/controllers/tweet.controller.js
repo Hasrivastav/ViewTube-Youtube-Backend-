@@ -30,7 +30,7 @@ const createTweet = asyncHandler(async (req, res) => {
 
 const getUserTweets = asyncHandler(async (req, res) => {
   // TODO: get user tweets
-  const userId = req.user?._id;
+  const {userId} =  req.params;
 
   if (!(userId && isValidObjectId(userId))) {
     throw new ApiError(400, "Invalid user id :error at getUserTweet");
@@ -88,7 +88,7 @@ const getUserTweets = asyncHandler(async (req, res) => {
       $project: {
         content: 1,
         ownerDetails: 1,
-        likesCount: 1,
+        likeCount: 1,
         createdAt: 1,
       },
     },
@@ -101,6 +101,8 @@ const getUserTweets = asyncHandler(async (req, res) => {
     .status(200)
     .json(new ApiResponse(201, tweets, "All Tweets fetched Successfully"));
 });
+
+
 
 const updateTweet = asyncHandler(async (req, res) => {
   //TODO: update tweet

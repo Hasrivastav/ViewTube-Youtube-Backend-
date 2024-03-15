@@ -54,9 +54,9 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 var updateLike = undefined;
 var addedlike = undefined;
 if(like){
-    updateLike = Like.findByIdAndDelete(like?._id)
+    updateLike = await Like.findByIdAndDelete(like?._id)
 }else{
-    addedlike = Like.create({
+    addedlike = await Like.create({
            video:videoId,
            likedBy:req.user?._id, 
     })
@@ -68,7 +68,7 @@ return res
     new ApiResponse(
         200 , 
         like? updateLike : addedlike,
-        `Like has been successfully toggled from ${like ? "Liked to disliked":"Disliked to Likd"}`
+        `Like has been successfully toggled from ${like ? "Liked to disliked":"Disliked to Liked"}`
     )
    )
  })
@@ -92,14 +92,14 @@ const like = await Like.findOne({
 var updatedLike = undefined ;
 var addedLike = undefined ;
 if(like){
-  updatedLike = await Like.findByIdAndDelete(
+  updatedLike = await Like.findOneAndDelete(
     {
-     likedBy: ownerId,
+     likedBy: user,
      comment: commentId,
     })
 }else{
     addedLike = await Like.create({
-        likedBy: ownerId,
+        likedBy: user,
         comment: commentId,
     })
 }
@@ -156,18 +156,24 @@ const toggleTweetLike = asyncHandler(async (req, res) => {
        );
  });
 
+
+
+
 const getLikedVideos = asyncHandler(async (req, res) => {
   //TODO: get all liked videos
-  const userId = req.user?.id;
+  const userId = req.user?._id;
+  console.log(userId);
 
   if(!userId){
     throw new ApiError(400 ,"Invalid User Id")
   }
 
+  // We can either use populate or aggregation pipeline
+  // const likedVideos = await Like.find({ likedBy: req.user._id, video: { $exists: true } }).populate('video');
   const likedVideos = await Like.aggregate([
     {
         $match:{
-            likedBy:new mongoose.Types.ObjectId(userId)
+          likedBy:new mongoose.Types.ObjectId(req.user?._id)
         }
     },
     {
@@ -193,7 +199,7 @@ const getLikedVideos = asyncHandler(async (req, res) => {
         }
     },
     {
-        $unwind:"$likedVideo"
+        $unwind:"$likedVideos"
     } ,
     {
         $sort: {
@@ -202,7 +208,7 @@ const getLikedVideos = asyncHandler(async (req, res) => {
      },
     {
         $project: {
-            videos: {
+          likedVideos: {
                "videoFile.url": 1,
                "thumbnail.url": 1,
                owner: 1,
@@ -223,6 +229,12 @@ const getLikedVideos = asyncHandler(async (req, res) => {
     }
     
   ])
+
+  console.log(likedVideos)
+
+  return res
+  .status(200)
+  .json(new ApiResponse(200 , likedVideos , "Videos fetched Successfully"))
 
 
 });

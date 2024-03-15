@@ -37,6 +37,10 @@ app.use("/api/v1/comments", commentRouter)
 import tweetRouter from './routes/tweet.routes.js'
 app.use("/api/v1/tweets", tweetRouter)
 
+import likeRouter from './routes/like.routes.js'
+app.use("/api/v1/likes", likeRouter)
+
+
 export {app}
 
 // Middlewares execute between the incoming request and the corresponding route handler, allowing you to perform operations like logging, authentication, data validation, request parsing, and more. This helps preprocess incoming data before it reaches the route handler

@@ -218,25 +218,9 @@ const getVideoById = asyncHandler(async (req, res) => {
     {
       $lookup: {
         from: "likes",
-        let: { videoId: "$_id" },
-        as: "likes",
-        pipeline: [
-          {
-            $match: {
-              $expr: {
-                $and: [
-                  { $eq: ["video", "$videoId"] },
-                  {
-                    $or: [
-                      { $eq: [{ $type: "$comment" }, "missing"] },
-                      { $eq: ["$comment", null] },
-                    ],
-                  },
-                ],
-              },
-            },
-          },
-        ],
+        localField: "_id",
+        foreignField: "video",
+        as:"likes"
       },
     },
     {

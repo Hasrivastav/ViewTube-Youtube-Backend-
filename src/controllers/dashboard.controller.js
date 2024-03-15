@@ -90,7 +90,7 @@ const getChannelVideos = asyncHandler(async (req, res) => {
    const channelVideos = await Video.aggregate([
       {
          $match: {
-            owner: new mongoose.Types.ObjectId(userId),
+            owner: new mongoose.Types.ObjectId(req.user?._id),
          },
       },
       {
@@ -103,11 +103,7 @@ const getChannelVideos = asyncHandler(async (req, res) => {
       },
       {
          $addFields: {
-            createdAt: {
-               $dateToParts: {
-                  $date: "$createdAt",
-               },
-            },
+          
             likesCount: {
                $size: "$likes",
             },
@@ -131,9 +127,10 @@ const getChannelVideos = asyncHandler(async (req, res) => {
          },
       },
    ]);
+   console.log(channelVideos)
 
    if (!channelVideos) {
-      throw new ApiErrors(500, "Failed To fetch Channel Videos");
+      throw new ApiError(500, "Failed To fetch Channel Videos");
    }
 
    return res

@@ -1,6 +1,7 @@
 import express from "express"
 import cors from "cors"
 import cookieParser from "cookie-parser"
+import routes from './routes/routes.js';
 
 const app =  express()
 
@@ -20,38 +21,8 @@ app.use(express.static("public"))
 
 app.use(cookieParser());
 
-//routes import adn rote declaration for user
-import userRouter from './routes/user.routes.js'
-app.use("/api/v1/users",userRouter)
+app.use('/api', routes);
 
-
-//routes declaratio for videos
-import videoRouter from './routes/video.routes.js'
-app.use("/api/v1/videos",videoRouter)
-
-
-import commentRouter from './routes/comment.routes.js'
-app.use("/api/v1/comments", commentRouter)
-
-
-import tweetRouter from './routes/tweet.routes.js'
-app.use("/api/v1/tweets", tweetRouter)
-
-import likeRouter from './routes/like.routes.js'
-app.use("/api/v1/likes", likeRouter)
-
-import playlistRouter from './routes/playlist.routes.js'
-app.use("/api/v1/playlist", playlistRouter)
-
-import subscriptionRouter from './routes/subscription.routes.js'
-app.use("/api/v1/subscription", subscriptionRouter)
-
-
-import dashBoardRouter from './routes/dashboard.routes.js'
-app.use("/api/v1/dash", dashBoardRouter)
-
-import healthcheckRouter from './routes/./healthcheck.routes.js'
-app.use("/api/v1/health", healthcheckRouter)
 
 
 

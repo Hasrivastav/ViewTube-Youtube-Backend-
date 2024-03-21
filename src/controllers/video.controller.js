@@ -68,7 +68,7 @@ const getAllVideos = asyncHandler(async (req, res) => {
   };
 
   const videosAggregate = await Video.aggregatePaginate(
-    Video.aggregate(pipelineArray),
+     Video.aggregate(pipelineArray),
     options
   ); 
 
@@ -300,10 +300,10 @@ const updateVideo = asyncHandler(async (req, res) => {
   if (!(title && discription)) {
     throw new ApiError(400, "Title and Description are required");
   }
-  const thumbnailToDelete = video.thumbnail.public_id
-  const thumbnailToUpdate = req.files?.path;
+  // const thumbnailToDelete = video.thumbnail.public_id
+  const thumbnailToUpdate = req.file?.path;
 
-  if (!thumbailLocalPath) {
+  if (!thumbnailToUpdate) {
     throw new ApiError(
       400,
       "Error while fetching thumbnail localPath at updateVideo contoller"
@@ -312,7 +312,7 @@ const updateVideo = asyncHandler(async (req, res) => {
   
   const thumbnail = await uploadOnCloudinary(thumbnailToUpdate);
 
-  if (!uploadThumbnail) {
+  if (!thumbnail) {
     throw new ApiError(
       400,
       "Error while uploading thumbnail on the cloudinary"
@@ -339,7 +339,7 @@ const updateVideo = asyncHandler(async (req, res) => {
   }
 
   if (updatedVideo) {
-    await deleteFromCloudinary(oldVideo.thumbnail.publicId);
+    await deleteFromCloudinary(video.thumbnail.publicId);
   }
 
   return res
@@ -426,7 +426,7 @@ const togglePublishStatus = asyncHandler(async (req, res) => {
     videoId,
     {
       $set: {
-        isPublished: true ? false : true,
+        isPublished: !oldVideo?.isPublished,
       },
     },
     {
@@ -447,8 +447,8 @@ const togglePublishStatus = asyncHandler(async (req, res) => {
         200,
         updatedVideo,
         `isPublished filed has successfully been updated from ${
-          updatedVideo.isPublished
-        } to ${!updatedVideo.isPublished}`
+          !updatedVideo.isPublished
+        } to ${updatedVideo.isPublished}`
       )
     );
 });
